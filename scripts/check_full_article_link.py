@@ -1,8 +1,18 @@
+# scripts/check_full_article_link.py
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 import csv
 import sys
 import os
-import time
+from dotenv import load_dotenv
+
+load_dotenv()
+
+def extract_title_from_html(html):
+    start = html.find("<title>")
+    end = html.find("</title>")
+    if start != -1 and end != -1:
+        return html[start + 7:end].strip()
+    return "-"
 
 def check_bulk_urls(file_path):
     with open(file_path, newline='', encoding='utf-8') as csvfile:
@@ -29,16 +39,26 @@ def check_bulk_urls(file_path):
         for i, url in enumerate(urls, start=1):
             try:
                 print(f"[{i}/{len(urls)}] Checking: {url}")
-                page.goto(url, timeout=25000, wait_until="load")
-                time.sleep(2)  # beri waktu JS render jalan
-                title = page.title()
+                page.goto(url, timeout=30000, wait_until="load")
 
-                if title and "403" not in title.lower() and "Forbidden" not in title:
-                    results.append((url, "OK", title.strip()))
-                    print(f"TITLE: {title.strip()}")
+                try:
+                    page.wait_for_function("() => document.title && document.title.length > 0", timeout=10000)
+                except:
+                    pass
+
+                title = page.title().strip()
+
+                if not title or "403" in title or "forbidden" in title.lower():
+                    html = page.content()
+                    title = extract_title_from_html(html)
+
+                if title and title != "-" and "403" not in title and "forbidden" not in title.lower():
+                    results.append((url, "OK", title))
+                    print(f"TITLE: {title}")
                 else:
                     results.append((url, "MISSING", "-"))
                     print("MISSING TITLE or BLOCKED")
+
             except PlaywrightTimeoutError:
                 results.append((url, "TIMEOUT", "-"))
                 print("TIMEOUT: Halaman terlalu lama dimuat")
@@ -48,10 +68,8 @@ def check_bulk_urls(file_path):
 
         browser.close()
 
-    # Simpan hasil
     results_dir = "results"
     os.makedirs(results_dir, exist_ok=True)
-
     base_name = os.path.splitext(os.path.basename(file_path))[0]
     outname = os.path.join(results_dir, f"{base_name}_report.csv")
 
