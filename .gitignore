@@ -1,0 +1,27 @@
+# File environment
+link_article.env
+.env
+parts/
+results/
+parts
+results
+
+# Folder virtual environment
+venv/
+.env/
+.venv/
+reports.local/
+
+# File cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# File build
+dist/
+build/
+*.egg-info/
+
+# File log
+*.log

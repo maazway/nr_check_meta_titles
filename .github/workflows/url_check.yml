@@ -1,0 +1,36 @@
+name: Check Meta Titles
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+        playwright install chromium
+
+    - name: Jalankan pengecekan judul URL
+      run: |
+        python scripts/split_csv.py
+        python scripts/check_full_article_link parts/urls_part1.csv
+        python scripts/check_full_article_link parts/urls_part2.csv
+        python scripts/check_full_article_link parts/urls_part3.csv
+        python scripts/check_full_article_link parts/urls_part4.csv
+        python scripts/merge_reports.py
+        python scripts/send_report.py
+      env:
+        EMAIL_USER: ${{ secrets.EMAIL_USER }}
+        EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+        EMAIL_TO: ${{ secrets.EMAIL_TO }}

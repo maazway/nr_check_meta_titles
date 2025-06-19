@@ -1,0 +1,65 @@
+# HOW TO USE – URL TITLE CHECKER
+
+## 1. Install Python & Dependency
+
+Install Python 3.10+ (https://www.python.org/)
+
+Lalu install dependency:
+
+> pip install -r requirements.txt
+
+Install browser untuk Playwright:
+
+> playwright install
+
+---
+
+## 2. Siapkan File URL
+
+Masukkan semua URL ke dalam file:
+> full_article_link.csv
+
+Format CSV:
+Satu URL per baris, tanpa header.
+
+---
+
+## 3. Bagi URL Menjadi Beberapa Bagian
+
+Jalankan:
+> python split_csv.py
+
+Hasilnya akan muncul di folder:
+> parts/urls_part1.csv
+> parts/urls_part2.csv
+> dst...
+
+---
+
+## 4. Jalankan Cek Secara Paralel
+
+Untuk pengguna Windows:
+> .\run_all.bat
+
+Untuk pengguna Mac/Linux:
+> bash run_all.sh
+
+Script ini akan membaca dari `parts/` dan menyimpan hasil ke folder `results/`.
+
+---
+
+## 5. Gabungkan Semua Hasil
+
+Setelah semua selesai diproses:
+> python merge_reports.py
+
+Hasil gabungan akan berada di:
+> results/all_urls_report.csv
+
+---
+
+Summary
+1. Open terminal
+2. Run "python scripts/split_csv.py"
+3. Run ".\run_all.bat"
+4. Run "python scripts/merge_reports.py"
