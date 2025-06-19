@@ -11,20 +11,31 @@ def check_bulk_urls(file_path):
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        context = browser.new_context(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119 Safari/537.36")
+        context = browser.new_context(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+            viewport={"width": 1280, "height": 800},
+            device_scale_factor=1,
+            is_mobile=False,
+            has_touch=False
+        )
         page = context.new_page()
+        page.set_extra_http_headers({
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Connection": "keep-alive"
+        })
 
         for i, url in enumerate(urls, start=1):
             try:
                 print(f"[{i}/{len(urls)}] Checking: {url}")
-                page.goto(url, timeout=20000, wait_until="domcontentloaded")
+                page.goto(url, timeout=25000, wait_until="domcontentloaded")
                 title = page.title()
-                if title:
+                if title and "403 Forbidden" not in title:
                     results.append((url, "OK", title.strip()))
                     print(f"TITLE: {title.strip()}")
                 else:
                     results.append((url, "MISSING", "-"))
-                    print("MISSING TITLE")
+                    print("MISSING TITLE or BLOCKED")
             except PlaywrightTimeoutError:
                 results.append((url, "TIMEOUT", "-"))
                 print("TIMEOUT: Halaman terlalu lama dimuat")
@@ -34,7 +45,7 @@ def check_bulk_urls(file_path):
 
         browser.close()
 
-    # Buat folder results jika belum ada
+    # Buat folder hasil jika belum ada
     results_dir = "results"
     os.makedirs(results_dir, exist_ok=True)
 
@@ -51,6 +62,6 @@ def check_bulk_urls(file_path):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python check_urls.py <csv_file>")
+        print("Usage: python check_full_article_link.py <csv_file>")
     else:
         check_bulk_urls(sys.argv[1])
