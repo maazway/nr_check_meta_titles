@@ -2,6 +2,7 @@ from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeo
 import csv
 import sys
 import os
+import time
 
 def check_bulk_urls(file_path):
     with open(file_path, newline='', encoding='utf-8') as csvfile:
@@ -28,9 +29,11 @@ def check_bulk_urls(file_path):
         for i, url in enumerate(urls, start=1):
             try:
                 print(f"[{i}/{len(urls)}] Checking: {url}")
-                page.goto(url, timeout=25000, wait_until="domcontentloaded")
+                page.goto(url, timeout=25000, wait_until="load")
+                time.sleep(2)  # beri waktu JS render jalan
                 title = page.title()
-                if title and "403 Forbidden" not in title:
+
+                if title and "403" not in title.lower() and "Forbidden" not in title:
                     results.append((url, "OK", title.strip()))
                     print(f"TITLE: {title.strip()}")
                 else:
@@ -45,7 +48,7 @@ def check_bulk_urls(file_path):
 
         browser.close()
 
-    # Buat folder hasil jika belum ada
+    # Simpan hasil
     results_dir = "results"
     os.makedirs(results_dir, exist_ok=True)
 
