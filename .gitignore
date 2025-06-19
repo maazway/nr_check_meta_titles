@@ -1,10 +1,9 @@
 # File environment
 link_article.env
 .env
-parts/
-results/
 parts
 results
+backupcode
 
 # Folder virtual environment
 venv/

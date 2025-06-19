@@ -2,6 +2,8 @@ name: Check Meta Titles
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '0 23 * * *'  # Setiap jam 06:00 WIB = 23:00 UTC
 
 jobs:
   check:
@@ -24,10 +26,10 @@ jobs:
     - name: Jalankan pengecekan judul URL
       run: |
         python scripts/split_csv.py
-        python scripts/check_full_article_link parts/urls_part1.csv
-        python scripts/check_full_article_link parts/urls_part2.csv
-        python scripts/check_full_article_link parts/urls_part3.csv
-        python scripts/check_full_article_link parts/urls_part4.csv
+        python scripts/check_full_article_link.py parts/urls_part1.csv
+        python scripts/check_full_article_link.py parts/urls_part2.csv
+        python scripts/check_full_article_link.py parts/urls_part3.csv
+        python scripts/check_full_article_link.py parts/urls_part4.csv
         python scripts/merge_reports.py
         python scripts/send_report.py
       env:

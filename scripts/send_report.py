@@ -22,14 +22,15 @@ def parse_report(file_path):
 
 def build_email_body(summary):
     total = sum(summary.values())
-    body = f"""Laporan hasil pengecekan judul dari total {total} URL:
+    body = f"""Laporan hasil pengecekan META TITLES NUTRICLUB dari total {total} URL:
 
-OK       : {summary['OK']}
-MISSING  : {summary['MISSING']}
-ERROR    : {summary['ERROR']}
+    OK       : {summary['OK']}
+    MISSING  : {summary['MISSING']}
+    ERROR    : {summary['ERROR']}
 
-Seluruh hasil lengkap tersedia dalam file CSV terlampir.
-"""
+    Seluruh hasil lengkap tersedia dalam file CSV terlampir.
+    (notes: untuk ERROR terjadi jika URL tidak dapat diakses dalam waktu 10 detik)
+    """
     return body
 
 def send_email_report():
@@ -46,7 +47,8 @@ def send_email_report():
     msg = EmailMessage()
     msg['Subject'] = 'Laporan Hasil Pengecekan Meta Title URL'
     msg['From'] = os.getenv('EMAIL_USER')
-    msg['To'] = os.getenv('EMAIL_TO')
+    recipients = [email.strip() for email in os.getenv('EMAIL_TO').split(",")]
+    msg['To'] = ", ".join(recipients)
     msg.set_content(body_text)
 
     with open(file_path, 'rb') as f:

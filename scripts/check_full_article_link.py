@@ -1,4 +1,4 @@
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 import csv
 import sys
 import os
@@ -11,12 +11,13 @@ def check_bulk_urls(file_path):
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
+        context = browser.new_context(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119 Safari/537.36")
+        page = context.new_page()
 
         for i, url in enumerate(urls, start=1):
             try:
                 print(f"[{i}/{len(urls)}] Checking: {url}")
-                page.goto(url, timeout=20000)
+                page.goto(url, timeout=20000, wait_until="domcontentloaded")
                 title = page.title()
                 if title:
                     results.append((url, "OK", title.strip()))
@@ -24,6 +25,9 @@ def check_bulk_urls(file_path):
                 else:
                     results.append((url, "MISSING", "-"))
                     print("MISSING TITLE")
+            except PlaywrightTimeoutError:
+                results.append((url, "TIMEOUT", "-"))
+                print("TIMEOUT: Halaman terlalu lama dimuat")
             except Exception as e:
                 results.append((url, "ERROR", "-"))
                 print(f"ERROR: {e}")
@@ -34,11 +38,9 @@ def check_bulk_urls(file_path):
     results_dir = "results"
     os.makedirs(results_dir, exist_ok=True)
 
-    # Nama file hasil tanpa timestamp
     base_name = os.path.splitext(os.path.basename(file_path))[0]
     outname = os.path.join(results_dir, f"{base_name}_report.csv")
 
-    # Simpan hasil ke file CSV
     with open(outname, "w", newline='', encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(["URL", "STATUS", "TITLE"])
