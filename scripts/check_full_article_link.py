@@ -1,4 +1,3 @@
-# scripts/check_full_article_link.py
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 import csv
 import sys
@@ -21,25 +20,39 @@ def check_bulk_urls(file_path):
     results = []
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        browser = p.chromium.launch(headless=True, args=[
+            '--disable-blink-features=AutomationControlled',
+            '--disable-infobars',
+            '--no-sandbox',
+            '--disable-dev-shm-usage'
+        ])
         context = browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+            user_agent=(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/125.0.0.0 Safari/537.36"
+            ),
             viewport={"width": 1280, "height": 800},
-            device_scale_factor=1,
+            java_script_enabled=True,
             is_mobile=False,
-            has_touch=False
+            has_touch=False,
+            device_scale_factor=1
         )
+
         page = context.new_page()
-        page.set_extra_http_headers({
-            "Accept-Language": "en-US,en;q=0.9",
-            "Accept-Encoding": "gzip, deflate, br",
-            "Connection": "keep-alive"
-        })
+
+        # Tambahkan stealth JS (anti bot detection)
+        page.add_init_script("""
+            Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
+            Object.defineProperty(navigator, 'languages', {get: () => ['en-US', 'en']});
+            Object.defineProperty(navigator, 'plugins', {get: () => [1, 2, 3, 4, 5]});
+            window.chrome = { runtime: {} };
+        """)
 
         for i, url in enumerate(urls, start=1):
             try:
                 print(f"[{i}/{len(urls)}] Checking: {url}")
-                page.goto(url, timeout=30000, wait_until="load")
+                page.goto(url, timeout=30000, wait_until="domcontentloaded")
 
                 try:
                     page.wait_for_function("() => document.title && document.title.length > 0", timeout=10000)
@@ -52,7 +65,7 @@ def check_bulk_urls(file_path):
                     html = page.content()
                     title = extract_title_from_html(html)
 
-                if title and title != "-" and "403" not in title and "forbidden" not in title.lower():
+                if title and title != "-" and "403" not in title.lower():
                     results.append((url, "OK", title))
                     print(f"TITLE: {title}")
                 else:
@@ -68,6 +81,7 @@ def check_bulk_urls(file_path):
 
         browser.close()
 
+    # Simpan hasil
     results_dir = "results"
     os.makedirs(results_dir, exist_ok=True)
     base_name = os.path.splitext(os.path.basename(file_path))[0]
