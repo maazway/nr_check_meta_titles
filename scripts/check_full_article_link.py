@@ -1,3 +1,4 @@
+# scripts/check_full_article_link.py
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 import csv
 import sys
@@ -53,6 +54,14 @@ def check_bulk_urls(file_path):
             try:
                 print(f"[{i}/{len(urls)}] Checking: {url}")
                 page.goto(url, timeout=30000, wait_until="domcontentloaded")
+
+                # Simulasikan interaksi manusia
+                page.mouse.move(200, 200)
+                page.wait_for_timeout(1000)
+                page.mouse.click(300, 300)
+                page.wait_for_timeout(500)
+                page.keyboard.press("ArrowDown")
+                page.wait_for_timeout(3000)
 
                 try:
                     page.wait_for_function("() => document.title && document.title.length > 0", timeout=10000)
